@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🐒 Fuga do Macaco - Jogo 2D</title>
+  <meta name="description" content="Ajude o macaco a fugir de sua namorada furiosa após roubar as bananas dela! Jogo Endless Runner 2D completo em HTML5 Canvas.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Container Principal do Jogo -->
+  <main id="game-wrapper" class="game-wrapper">
+    
+    <!-- Elemento Canvas onde o jogo é renderizado -->
+    <canvas id="game-canvas" width="960" height="540"></canvas>
+
+    <!-- HUD Superior do Jogo -->
+    <header id="game-hud" class="game-hud hidden">
+      <div class="hud-left">
+        <!-- Vidas -->
+        <div class="hud-item hearts-box" id="hud-hearts" aria-label="Vidas">
+          <span class="heart active" id="heart-1">❤️</span>
+          <span class="heart active" id="heart-2">❤️</span>
+          <span class="heart active" id="heart-3">❤️</span>
+        </div>
+        <!-- Indicador de Proximidade da Namorada -->
+        <div class="threat-meter" title="Distância da Namorada">
+          <span class="threat-icon">😡</span>
+          <div class="threat-bar-bg">
+            <div id="threat-bar-fill" class="threat-bar-fill" style="width: 25%;"></div>
+          </div>
+          <span class="threat-icon">🐒</span>
+        </div>
+      </div>
+
+      <div class="hud-center">
+        <!-- Distância -->
+        <div class="hud-item distance-badge">
+          <span class="hud-icon">🏃</span>
+          <span id="hud-distance">0m</span>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <!-- Pontuação / Bananas -->
+        <div class="hud-item score-badge">
+          <span class="hud-icon">🍌</span>
+          <span id="hud-score">0000</span>
+        </div>
+        <!-- Botão de Som -->
+        <button id="btn-sound-toggle" class="hud-btn" aria-label="Alternar Som" title="Ativar/Desativar Som">
+          <span id="sound-icon">🔊</span>
+        </button>
+        <!-- Botão de Pause -->
+        <button id="btn-pause-toggle" class="hud-btn" aria-label="Pausar Jogo" title="Pausar Jogo (P)">
+          ⏸️
+        </button>
+      </div>
+    </header>
+
+    <!-- Alerta de Perigo da Namorada (vinheta avermelhada na tela quando muito perto) -->
+    <div id="danger-overlay" class="danger-overlay hidden"></div>
+    <div id="damage-flash" class="damage-flash hidden"></div>
+
+    <!-- TELA INICIAL -->
+    <div id="screen-start" class="screen-overlay">
+      <div class="modal-card bounce-in">
+        <div class="game-logo">
+          <div class="logo-emoji">🐒💨 🍌</div>
+          <h1 class="game-title">FUGA DO MACACO</h1>
+          <p class="game-subtitle">"Ele roubou as bananas erradas..."</p>
+        </div>
+
+        <div class="start-high-score">
+          <span class="trophy-icon">🏆</span>
+          <span>Recorde: <strong id="start-record-score">0</strong> pts (<span id="start-record-dist">0m</span>)</span>
+        </div>
+
+        <div class="menu-buttons">
+          <button id="btn-play" class="btn btn-primary btn-pulse">
+            <span class="btn-text">▶ JOGAR</span>
+          </button>
+          <button id="btn-how-to-play" class="btn btn-secondary">
+            <span>❓ COMO JOGAR</span>
+          </button>
+        </div>
+
+        <div class="quick-controls-hint">
+          <span>⌨️ Pressione <strong>ESPAÇO</strong> ou <strong>SETA PRA CIMA</strong> para pular</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL COMO JOGAR -->
+    <div id="modal-instructions" class="screen-overlay hidden">
+      <div class="modal-card modal-medium">
+        <h2 class="modal-title">📖 Como Jogar</h2>
+        
+        <p class="lore-text">
+          O macaco roubou as bananas premiadas da sua namorada e ela está <strong>furiosa</strong> correndo atrás dele! 
+          Corra pela floresta tropical, desvie dos obstáculos e recolha bananas para pontuar.
+        </p>
+
+        <div class="rules-grid">
+          <div class="rule-box">
+            <div class="rule-icon">🦘</div>
+            <h4>Pulos Ágeis</h4>
+            <p>Pule sobre pedras, troncos e arbustos espinhosos para não tropeçar.</p>
+          </div>
+          <div class="rule-box">
+            <div class="rule-icon">🍌</div>
+            <h4>Colete Bananas</h4>
+            <p>Cada banana vale <strong>+10 pontos</strong> e dá energia ao macaco.</p>
+          </div>
+          <div class="rule-box">
+            <div class="rule-icon">😡</div>
+            <h4>Cuidado com Ela!</h4>
+            <p>Se bater em obstáculos, você perde 1 vida e ela <strong>se aproxima</strong>!</p>
+          </div>
+          <div class="rule-box">
+            <div class="rule-icon">❤️</div>
+            <h4>3 Corações</h4>
+            <p>Ao perder os 3 corações ou se ela te alcançar... é <strong>Fim de Jogo</strong>!</p>
+          </div>
+        </div>
+
+        <div class="controls-guide">
+          <h3>🎮 Controles:</h3>
+          <div class="key-tags">
+            <div class="key-item"><kbd>Espaço</kbd> ou <kbd>↑</kbd> <span>Pular</span></div>
+            <div class="key-item"><kbd>P</kbd> <span>Pausar</span></div>
+            <div class="key-item"><kbd>R</kbd> <span>Reiniciar</span></div>
+            <div class="key-item"><span class="touch-icon">📱</span> <span>Toque na tela ou botão PULAR</span></div>
+          </div>
+        </div>
+
+        <button id="btn-close-instructions" class="btn btn-primary">
+          <span>ENTENDI, VAMOS NESSA!</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TELA DE PAUSE -->
+    <div id="screen-pause" class="screen-overlay hidden">
+      <div class="modal-card">
+        <div class="pause-icon">⏸️</div>
+        <h2 class="modal-title">JOGO PAUSADO</h2>
+        <p class="pause-text">A namorada está te esperando...</p>
+        
+        <div class="menu-buttons">
+          <button id="btn-resume" class="btn btn-primary">
+            <span>▶ CONTINUAR</span>
+          </button>
+          <button id="btn-restart-pause" class="btn btn-secondary">
+            <span>🔄 REINICIAR</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TELA DE GAME OVER -->
+    <div id="screen-gameover" class="screen-overlay hidden">
+      <div class="modal-card bounce-in">
+        <div class="gameover-header">
+          <span class="broken-heart">💔</span>
+          <h2 class="gameover-title">ELA TE PEGOU!</h2>
+        </div>
+
+        <p id="gameover-quote" class="gameover-quote">
+          "Você corre como uma banana."
+        </p>
+
+        <div class="results-stats">
+          <div class="stat-item">
+            <span class="stat-label">Pontuação Final</span>
+            <span id="gameover-score" class="stat-val highlight">0000</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Distância Percorrida</span>
+            <span id="gameover-distance" class="stat-val">0000m</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Bananas Comidas</span>
+            <span id="gameover-bananas" class="stat-val">0</span>
+          </div>
+        </div>
+
+        <div id="new-record-badge" class="new-record-badge hidden">
+          ✨ NOVO RECORDE ALCANÇADO! 🏆
+        </div>
+
+        <div class="menu-buttons">
+          <button id="btn-try-again" class="btn btn-primary btn-pulse">
+            <span>🔄 TENTAR NOVAMENTE (R)</span>
+          </button>
+          <button id="btn-menu" class="btn btn-secondary">
+            <span>🏠 MENU PRINCIPAL</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botão de Pular para Mobile / Toque -->
+    <button id="mobile-jump-btn" class="mobile-jump-btn" aria-label="Pular">
+      <span class="jump-btn-icon">🦘</span>
+      <span class="jump-btn-label">PULAR</span>
+    </button>
+
+  </main>
+
+  <script src="js/game.js"></script>
+</body>
+</html>
